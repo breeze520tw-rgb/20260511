@@ -27,6 +27,11 @@ function setup() {
   faceMesh.detectStart(capture, gotFaces);
 }
 
+function windowResized() {
+  // 當視窗大小改變時，重新調整畫布大小以維持全螢幕
+  resizeCanvas(windowWidth, windowHeight);
+}
+
 function draw() {
   // 設定背景顏色為 e7c6ff
   background('#e7c6ff');
@@ -42,6 +47,15 @@ function draw() {
   let dw = width * 0.5;
   let dh = height * 0.5;
   image(capture, 0, 0, dw, dh);
+
+  // 檢查攝影機是否正常運作的提示
+  if (capture.width === 0) {
+    fill(0);
+    textAlign(CENTER);
+    scale(-1, 1); // 因為上面用了 scale(-1, 1)，文字需要轉回來否則會變反的
+    text("正在啟動攝影機或未偵測到裝置...", 0, 0);
+    return;
+  }
 
   // 繪製耳垂上的圓圈
   if (faces.length > 0) {

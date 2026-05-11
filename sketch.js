@@ -1,34 +1,51 @@
 let capture;
 let faceMesh;
+let handPose;
 let faces = [];
+let hands = [];
 let options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: false };
-let earringImg;
+let earrings = [];
+let selectedIndex = 0; // 預設顯示第一款耳環
 
 function preload() {
-  // 載入耳環圖片
-  earringImg = loadImage('pic/acc1_ring.png');
+  // 載入五種不同的耳環圖片
+  earrings[0] = loadImage('pic/acc1_ring.png');
+  earrings[1] = loadImage('pic/acc2_pearl.png');
+  earrings[2] = loadImage('pic/acc3_tassel.png');
+  earrings[3] = loadImage('pic/acc4_jade.png');
+  earrings[4] = loadImage('pic/acc5_phoenix.png');
 }
 
 function gotFaces(results) {
   faces = results;
 }
 
+function gotHands(results) {
+  hands = results;
+}
+
 function setup() {
   // 建立全螢幕畫布
   createCanvas(windowWidth, windowHeight);
-  // 擷取攝影機影像
-  capture = createCapture(VIDEO);
+  
+  // 擷取攝影機影像，並加入錯誤處理回呼
+  capture = createCapture(VIDEO, function(stream) {
+    console.log("攝影機啟動成功");
+  });
   capture.size(640, 480);
-  // 隱藏預設生成的 video 標籤，避免重疊
   capture.hide();
 
   // 初始化 faceMesh 並開始偵測
+  // 請確保 HTML 檔案有引入 <script src="https://unpkg.com/ml5@1.0.1/dist/ml5.min.js"></script>
   faceMesh = ml5.faceMesh(options);
   faceMesh.detectStart(capture, gotFaces);
+
+  // 初始化 handPose 並開始偵測
+  handPose = ml5.handPose({ flipHorizontal: false });
+  handPose.detectStart(capture, gotHands);
 }
 
 function windowResized() {
-  // 當視窗大小改變時，重新調整畫布大小以維持全螢幕
   resizeCanvas(windowWidth, windowHeight);
 }
 
@@ -36,25 +53,40 @@ function draw() {
   // 設定背景顏色為 e7c6ff
   background('#e7c6ff');
 
+  // 檢查攝影機是否正常運作的提示
+  if (capture.width === 0) {
+    fill(100);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    text("正在啟動攝影機，請確保已允許權限並使用伺服器(localhost)開啟...", width/2, height/2);
+    return;
+  }
+
   push();
-  // 將座標原點移至畫面中心
   translate(width / 2, height / 2);
-  // 水平翻轉影像（達成左右顛倒效果）
-  scale(-1, 1);
-  // 設定影像繪製模式為中心點對齊
+  scale(-1, 1); // 左右翻轉影像
   imageMode(CENTER);
-  // 顯示影像，寬高為全螢幕寬高的 50%
+
   let dw = width * 0.5;
   let dh = height * 0.5;
   image(capture, 0, 0, dw, dh);
 
-  // 檢查攝影機是否正常運作的提示
-  if (capture.width === 0) {
-    fill(0);
-    textAlign(CENTER);
-    scale(-1, 1); // 因為上面用了 scale(-1, 1)，文字需要轉回來否則會變反的
-    text("正在啟動攝影機或未偵測到裝置...", 0, 0);
-    return;
+  // 手勢辨識切換邏輯
+  if (hands.length > 0) {
+    let hand = hands[0];
+    let count = 0;
+    
+    // 簡單判斷手指是否伸直 (比較指尖 8, 12, 16, 20 與指節 6, 10, 14, 18 的 Y 座標)
+    if (hand.keypoints[8].y < hand.keypoints[6].y) count++;   // 食指
+    if (hand.keypoints[12].y < hand.keypoints[10].y) count++; // 中指
+    if (hand.keypoints[16].y < hand.keypoints[14].y) count++; // 無名指
+    if (hand.keypoints[20].y < hand.keypoints[18].y) count++; // 小指
+    if (hand.keypoints[4].y < hand.keypoints[3].y) count++;   // 大拇指 (簡化判定)
+
+    // 當偵測到 1~5 根手指時，切換對應的耳環索引
+    if (count >= 1 && count <= 5) {
+      selectedIndex = count - 1;
+    }
   }
 
   // 繪製耳垂上的圓圈
@@ -69,8 +101,14 @@ function draw() {
         // 將偵測到的座標映射到縮放後的影像位置
         let x = map(keypoint.x, 0, capture.width, -dw / 2, dw / 2);
         let y = map(keypoint.y, 0, capture.height, -dh / 2, dh / 2);
-        // 顯示耳環影像，大小設定為 40x40
-        image(earringImg, x, y, 40, 40);
+        
+        let currentImg = earrings[selectedIndex];
+        // 計算耳環比例：寬度 40，高度依比例縮放
+        let eW = 40;
+        let eH = eW * (currentImg.height / currentImg.width);
+        
+        // 將耳環位置向下偏移 (eH/2)，使耳環頂端對準耳垂偵測點
+        image(currentImg, x, y + eH/2, eW, eH);
       }
     }
   }

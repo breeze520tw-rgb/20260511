@@ -36,7 +36,6 @@ function setup() {
   capture.hide();
 
   // 初始化 faceMesh 並開始偵測
-  // 請確保 HTML 檔案有引入 <script src="https://unpkg.com/ml5@1.0.1/dist/ml5.min.js"></script>
   faceMesh = ml5.faceMesh(options);
   faceMesh.detectStart(capture, gotFaces);
 
@@ -89,14 +88,14 @@ function draw() {
     }
   }
 
-  // 繪製耳垂上的圓圈
-  if (faces.length > 0) {
+  // 繪製耳環
+  if (faces && faces.length > 0) {
     let face = faces[0];
     // MediaPipe FaceMesh 索引：177 為左耳垂附近, 401 為右耳垂附近
     let indices = [177, 401];
     
     for (let index of indices) {
-      let keypoint = face.keypoints[index];
+      let keypoint = (face.keypoints) ? face.keypoints[index] : null;
       if (keypoint) {
         // 將偵測到的座標映射到縮放後的影像位置
         let x = map(keypoint.x, 0, capture.width, -dw / 2, dw / 2);
@@ -104,7 +103,7 @@ function draw() {
         
         let currentImg = earrings[selectedIndex];
         // 計算耳環比例：寬度 40，高度依比例縮放
-        let eW = 40;
+        let eW = 60;
         let eH = eW * (currentImg.height / currentImg.width);
         
         // 將耳環位置向下偏移 (eH/2)，使耳環頂端對準耳垂偵測點

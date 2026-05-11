@@ -5,6 +5,7 @@ let faces = [];
 let hands = [];
 let options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: false };
 let earrings = [];
+let faceImg;
 let selectedIndex = 0; // 預設顯示第一款耳環
 
 function preload() {
@@ -14,6 +15,8 @@ function preload() {
   earrings[2] = loadImage('pic/acc3_tassel.png');
   earrings[3] = loadImage('pic/acc4_jade.png');
   earrings[4] = loadImage('pic/acc5_phoenix.png');
+  // 載入臉部覆蓋圖片
+  faceImg = loadImage('pic2/4379901.png');
 }
 
 function gotFaces(results) {
@@ -98,6 +101,18 @@ function draw() {
   // 繪製耳環
   if (faces && faces.length > 0) {
     let face = faces[0];
+
+    // 繪製臉部覆蓋圖片
+    if (face.box) {
+      // 計算臉部中心點並轉換座標
+      let fx = map(face.box.x + face.box.width / 2, 0, capture.width, -dw / 2, dw / 2);
+      let fy = map(face.box.y + face.box.height / 2, 0, capture.height, -dh / 2, dh / 2);
+      // 計算圖片縮放寬高 (增加 1.2 倍以完整覆蓋)
+      let fw = map(face.box.width, 0, capture.width, 0, dw) * 1.2;
+      let fh = map(face.box.height, 0, capture.height, 0, dh) * 1.2;
+      image(faceImg, fx, fy, fw, fh);
+    }
+
     // MediaPipe FaceMesh 索引：177 為左耳垂附近, 401 為右耳垂附近
     let indices = [177, 401];
     

@@ -52,6 +52,13 @@ function draw() {
   // 設定背景顏色為 e7c6ff
   background('#e7c6ff');
 
+  // 在畫面上方正中間顯示文字
+  fill(0); // 設定文字顏色為黑色
+  noStroke();
+  textSize(32); // 設定文字大小
+  textAlign(CENTER, TOP);
+  text("414XXX183 王O崴", width / 2, 20);
+
   // 檢查攝影機是否正常運作的提示
   if (capture.width === 0) {
     fill(100);
